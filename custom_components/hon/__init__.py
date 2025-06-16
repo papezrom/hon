@@ -53,10 +53,8 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.unique_id] = {"hon": hon, "coordinator": coordinator}
 
-    for platform in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, platform)
-        )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     return True
 
 
@@ -66,8 +64,9 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry) -> boo
     hass.config_entries.async_update_entry(
         entry, data={**entry.data, CONF_REFRESH_TOKEN: refresh_token}
     )
-    unload = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload = await hass.config_entries.async_unload_entry_platforms(entry, PLATFORMS)
     if unload:
+        hass.data[DOMAIN].pop(entry.unique_id)
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN, None)
     return unload
